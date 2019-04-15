@@ -15,6 +15,22 @@ function init() {
  * @param {The telegraph message context} ctx 
  * @param {A callback used to find the file id of the media in that message} file_id_callback 
  */
+
+function handle_category_request(ctx){   
+    //Letztes Meme des Useres mit der im text enthaltenen Kategorie updaten und bild schließlich in die gruppe senden.
+    //evtl übergeben wir auch die file id aber der callbackdata kann nur string und max 64 byte, also müssen wir wohl immer das letzte meme von dem user in der datenbank aktualisieren
+    //außerdem muss keyboard wieder entfernt werden
+
+    console.log('=================CATEGORY=================');
+    console.log(ctx);
+    //forward_meme_to_group(ctx, file_id, user, category)
+}
+
+
+
+
+
+
 function handle_meme_request(ctx) {
     try {
         let user = ctx.message.from;
@@ -45,10 +61,11 @@ function handle_meme_request(ctx) {
             .then(() => { 
                 ctx.reply('Bitte wähle eine Kategorie aus',{                    
                     reply_markup: {
-                        keyboard: [[{ text: "Gesellschaft", callback_data: "Kategorie" },{ text: "dank", callback_data: "Kategorie" }]]
+                        //für jede kategorie einen button erzeugen, callbackdata muss nen string sein. 
+                        keyboard: [[{ text: "Gesellschaft", callback_data: "category" },{ text: "dank", callback_data: "category"}]]
                     }
                 }); 
-                forward_meme_to_group(ctx, file_id, user, category)
+                //Hier noch in die Datenbank speichern
             })
             .catch((err) => {
                 if (!!err.code && err.code == 11000) {
@@ -101,3 +118,4 @@ function forward_meme_to_group(ctx, file_id, user, category) {
 module.exports.init = init;
 module.exports.handle_meme_request = handle_meme_request;
 module.exports.forward_meme_to_group = forward_meme_to_group;
+module.exports.handle_category_request= handle_category_request;

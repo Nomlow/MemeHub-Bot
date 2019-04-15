@@ -8,7 +8,8 @@ db.init('live');
 forward.init();
 
 let callback_handlers = {
-    "upvote": upvote.handle_upvote_request
+    "upvote": upvote.handle_upvote_request,
+    "category": forward.handle_category_request
 };
 
 const bot = new Composer()
