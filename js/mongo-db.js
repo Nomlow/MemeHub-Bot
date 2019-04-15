@@ -33,11 +33,13 @@ function init(database = 'test') {
 function save_user(user) {
     users.updateOne(
         { _id: user.id },
-        { $set: {
-            username: user.username,
-            first_name: user.first_name,
-            last_name: user.last_name
-        }},
+        {
+            $set: {
+                username: user.username,
+                first_name: user.first_name,
+                last_name: user.last_name
+            }
+        },
         { upsert: true }
     ).catch(log_err);
 }
@@ -66,8 +68,8 @@ function save_meme(user_id, file_id, file_type, message_id, category, group_mess
             upvoted_by: [],
             post_date: post_date
         })
-        .then(resolve)
-        .catch(reject);
+            .then(resolve)
+            .catch(reject);
     });
 }
 
@@ -84,25 +86,25 @@ function save_meme_group_message(ctx) {
     }
     memes.updateOne(
         { _id: file_id },
-        { $set: { group_message_id: ctx.message_id }}
+        { $set: { group_message_id: ctx.message_id } }
     )
-    .catch(log_err);
+        .catch(log_err);
 }
 
-function save_upvote(user_id, file_id) { 
+function save_upvote(user_id, file_id) {
     return new Promise((resolve, reject) => {
         memes.findOne({ _id: file_id, upvoted_by: user_id }, { _id: true })
             .then(meme => {
                 if (meme) {
                     memes.updateOne(
                         { _id: file_id },
-                        { $pull: { upvoted_by: user_id }}
+                        { $pull: { upvoted_by: user_id } }
                     ).then(resolve, reject);
                 }
                 else {
                     memes.updateOne(
                         { _id: file_id },
-                        { $addToSet: { upvoted_by: user_id }}
+                        { $addToSet: { upvoted_by: user_id } }
                     ).then(resolve, reject);
                 }
             }, reject);
@@ -126,17 +128,29 @@ function count_upvotes(file_id) {
             }, log_err);
     });
 }
+function get_meme_category() {
+    return new Promise((resolve, reject) => {
+        memes.distinct({ key: "category" }, {}, (err, cursor) => {
+
+
+        });
+
+    })
+}
+
 
 function get_user_top_meme(user_id) {
     return new Promise((resolve, reject) => {
         memes.aggregate([
-            { $match: { poster_id: user_id }},
-            { $project: {
-                _id: false,
-                media_id: "$_id",
-                upvotes: { $size: "$upvoted_by" },
-                type: true
-            }},
+            { $match: { poster_id: user_id } },
+            {
+                $project: {
+                    _id: false,
+                    media_id: "$_id",
+                    upvotes: { $size: "$upvoted_by" },
+                    type: true
+                }
+            },
             { $sort: { upvotes: -1 } }
         ], {}, (err, cursor) => {
             if (err) {
@@ -149,7 +163,7 @@ function get_user_top_meme(user_id) {
                     reject(err);
                     return;
                 }
-                
+
                 resolve(result);
             });
         });
@@ -159,20 +173,24 @@ function get_user_top_meme(user_id) {
 function get_user_average_upvotes(user_id) {
     return new Promise((resolve, reject) => {
         memes.aggregate([
-            { $match: { poster_id: user_id }},
-            { $project: {
-                upvotes: { $size: "$upvoted_by" }
-            }},
-            { $group: { 
-                _id: "$poster_id",
-                average_upvotes: { $avg: "$upvotes" }
-             }}
+            { $match: { poster_id: user_id } },
+            {
+                $project: {
+                    upvotes: { $size: "$upvoted_by" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$poster_id",
+                    average_upvotes: { $avg: "$upvotes" }
+                }
+            }
         ], {}, (err, cursor) => {
             if (err) {
                 reject(err);
                 return;
             }
-            
+
             cursor.next((err, result) => {
                 if (err) {
                     reject(err);
@@ -188,28 +206,34 @@ function get_user_average_upvotes(user_id) {
 function get_user_meme_counts() {
     return new Promise((resolve, reject) => {
         memes.aggregate([
-            { $group: { 
-                _id: "$poster_id",
-                memes: { $sum: 1 }
-            }},
-            { $sort: { memes: -1 }},
+            {
+                $group: {
+                    _id: "$poster_id",
+                    memes: { $sum: 1 }
+                }
+            },
+            { $sort: { memes: -1 } },
             { $limit: 5 },
-            { $lookup: {
-                from: collection_names.users,
-                localField: "_id",
-                foreignField: "_id",
-                as: "users"
-            }},
-            { $replaceRoot: {
-                 newRoot: { $mergeObjects: [ { $arrayElemAt: [ "$users", 0 ] }, "$$ROOT" ] } 
-            }},
+            {
+                $lookup: {
+                    from: collection_names.users,
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "users"
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: { $mergeObjects: [{ $arrayElemAt: ["$users", 0] }, "$$ROOT"] }
+                }
+            },
             { $project: { users: 0 } }
         ], {}, (err, cursor) => {
             if (err) {
                 reject(err);
                 return;
             }
-            
+
             cursor.toArray((err, users) => {
                 if (err) {
                     reject(err);
@@ -227,6 +251,7 @@ module.exports.save_meme = save_meme;
 module.exports.save_meme_group_message = save_meme_group_message;
 module.exports.save_upvote = save_upvote;
 module.exports.count_upvotes = count_upvotes;
+module.exports.get_meme_category = get_meme_category;
 module.exports.get_user_top_meme = get_user_top_meme;
 module.exports.get_user_average_upvotes = get_user_average_upvotes;
 module.exports.get_user_meme_counts = get_user_meme_counts;

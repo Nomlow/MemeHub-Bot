@@ -43,12 +43,16 @@ function handle_meme_request(ctx) {
         db.save_user(user);
         db.save_meme(user.id, file_id, file_type, ctx.message.message_id, category)
             .then(() => { 
-                ctx.reply('👍'); 
+                ctx.reply('Bitte wähle eine Kategorie aus',{                    
+                    reply_markup: {
+                        keyboard: [[{ text: "Gesellschaft", callback_data: "Kategorie" },{ text: "dank", callback_data: "Kategorie" }]]
+                    }
+                }); 
                 forward_meme_to_group(ctx, file_id, user, category)
             })
             .catch((err) => {
                 if (!!err.code && err.code == 11000) {
-                    ctx.telegram.sendMessage(user.id, 'REPOST DU SPAST 😡');
+                    ctx.reply('REPOST DU SPAST 😡');
                     return;
                 }
                 console.log(err);

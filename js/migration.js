@@ -27,7 +27,7 @@ function run() {
             process.exit(1)
         });
 
-    mongo.init();
+    mongo.init('live');
     setTimeout(migrate_users, 1000);
     setTimeout(migrate_memes, 2000);
     setTimeout(migrate_upvotes, 4000);
